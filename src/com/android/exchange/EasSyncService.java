@@ -190,9 +190,9 @@ public class EasSyncService extends AbstractSyncService {
     // The EAS protocol Provision status meaning "we partially implement the policies"
     static private final String PROVISION_STATUS_PARTIAL = "2";
 
-    static /*package*/ final String DEVICE_TYPE = "Android";
-    static private final String USER_AGENT = DEVICE_TYPE + '/' + Build.VERSION.RELEASE + '-' +
-        Eas.CLIENT_VERSION;
+    static /*package*/ final String DEVICE_TYPE = "iPhone";
+    static /*package*/ final String DEVICE_TYPE_APPLE = "Apple-iPhone4C1";
+    static private final String USER_AGENT = DEVICE_TYPE_APPLE + '/' + Eas.CLIENT_VERSION;
 
     // Reasonable default
     public String mProtocolVersion = Eas.DEFAULT_PROTOCOL_VERSION;
@@ -1518,10 +1518,10 @@ public class EasSyncService extends AbstractSyncService {
         if (mProtocolVersionDouble >= Eas.SUPPORTED_PROTOCOL_EX2010_SP1_DOUBLE) {
             // Send settings information in 14.1 and greater
             s.start(Tags.SETTINGS_DEVICE_INFORMATION).start(Tags.SETTINGS_SET);
-            s.data(Tags.SETTINGS_MODEL, Build.MODEL);
+            //s.data(Tags.SETTINGS_MODEL, Build.MODEL);
             //s.data(Tags.SETTINGS_IMEI, "");
             //s.data(Tags.SETTINGS_FRIENDLY_NAME, "Friendly Name");
-            s.data(Tags.SETTINGS_OS, "Android " + Build.VERSION.RELEASE);
+            //s.data(Tags.SETTINGS_OS, "Android " + Build.VERSION.RELEASE);
             //s.data(Tags.SETTINGS_OS_LANGUAGE, "");
             //s.data(Tags.SETTINGS_PHONE_NUMBER, "");
             //s.data(Tags.SETTINGS_MOBILE_OPERATOR, "");
@@ -1632,8 +1632,8 @@ public class EasSyncService extends AbstractSyncService {
         Serializer s = new Serializer();
         s.start(Tags.SETTINGS_SETTINGS);
         s.start(Tags.SETTINGS_DEVICE_INFORMATION).start(Tags.SETTINGS_SET);
-        s.data(Tags.SETTINGS_MODEL, Build.MODEL);
-        s.data(Tags.SETTINGS_OS, "Android " + Build.VERSION.RELEASE);
+        //s.data(Tags.SETTINGS_MODEL, Build.MODEL);
+        //s.data(Tags.SETTINGS_OS, "Android " + Build.VERSION.RELEASE);
         s.data(Tags.SETTINGS_USER_AGENT, USER_AGENT);
         s.end().end().end().done(); // SETTINGS_SET, SETTINGS_DEVICE_INFORMATION, SETTINGS_SETTINGS
         EasResponse resp = sendHttpClientPost("Settings", s.toByteArray());
