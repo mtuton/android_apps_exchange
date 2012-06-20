@@ -229,10 +229,15 @@ public class ExchangeService extends Service implements Runnable {
     // Whether we have an unsatisfied "kick" pending
     private boolean mKicked = false;
 
+    // String for the auto-sync changed Intent.  This isn't currently exposed by the API
+    public static String SYNC_CONN_STATUS_CHANGE = "com.android.sync.SYNC_CONN_STATUS_CHANGED";
+
     // Receiver of connectivity broadcasts
     private ConnectivityReceiver mConnectivityReceiver = null;
     private ConnectivityReceiver mBackgroundDataSettingReceiver = null;
+    private ConnectivityReceiver mAutoSyncSettingReceiver = null;
     private volatile boolean mBackgroundData = true;
+    private volatile boolean mMasterAutoSync = true;
     // The most current NetworkInfo (from ConnectivityManager)
     private NetworkInfo mNetworkInfo;
 
@@ -1558,12 +1563,15 @@ public class ExchangeService extends Service implements Runnable {
                     }
                 }
             } else if (intent.getAction().equals(
-                    ConnectivityManager.ACTION_BACKGROUND_DATA_SETTING_CHANGED)) {
+                    ConnectivityManager.ACTION_BACKGROUND_DATA_SETTING_CHANGED) ||
+		    intent.getAction().equals(
+		    	SYNC_CONN_STATUS_CHANGE)) {
                 ConnectivityManager cm =
                         (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
                 mBackgroundData = cm.getBackgroundDataSetting();
+		mMasterAutoSync = ContentResolver.getMasterSyncAutomatically();
                 // If background data is now on, we want to kick ExchangeService
-                if (mBackgroundData) {
+                if (mBackgroundData && mMasterAutoSync) {
                     kick("background data on");
                     log("Background data on; restart syncs");
                 // Otherwise, stop all syncs
@@ -1919,6 +1927,12 @@ public class ExchangeService extends Service implements Runnable {
                         Context.CONNECTIVITY_SERVICE);
                 mBackgroundData = cm.getBackgroundDataSetting();
 
+		// Set up receiver for Application AutoSync setting
+		mAutoSyncSettingReceiver = new ConnectivityReceiver();
+		registerReceiver(mAutoSyncSettingReceiver, new IntentFilter(
+			SYNC_CONN_STATUS_CHANGE));
+		mMasterAutoSync = ContentResolver.getMasterSyncAutomatically();
+
                 // Do any required work to clean up our Mailboxes (this serves to upgrade
                 // mailboxes that existed prior to EmailProvider database version 17)
                 MailboxUtilities.fixupUninitializedParentKeys(this, getEasAccountSelector());
@@ -1995,6 +2009,9 @@ public class ExchangeService extends Service implements Runnable {
                 if (mBackgroundDataSettingReceiver != null) {
                     unregisterReceiver(mBackgroundDataSettingReceiver);
                 }
+		if (mAutoSyncSettingReceiver != null) {
+		    unregisterReceiver(mAutoSyncSettingReceiver);
+		}
 
                 // Unregister observers
                 ContentResolver resolver = getContentResolver();
@@ -2153,7 +2170,7 @@ public class ExchangeService extends Service implements Runnable {
         // 1) are we restricted by policy (i.e. manual sync only),
         // 2) has the user checked the "Sync Email" box in Account Settings, and
         // 3) does the user have the master "background data" box checked in Settings
-        } else if (!canAutoSync(account) || !canSyncEmail(account.mAmAccount) || !mBackgroundData) {
+        } else if (!canAutoSync(account) || !canSyncEmail(account.mAmAccount) || !mBackgroundData || !mMasterAutoSync) {
             return false;
         }
         return true;
