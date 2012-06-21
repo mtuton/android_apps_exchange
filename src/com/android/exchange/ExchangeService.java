@@ -2077,6 +2077,9 @@ public class ExchangeService extends Service implements Runnable {
         if (exchangeService == null) {
             return false;
         }
+	if (!ContentResolver.getMasterSyncAutomatically()) {
+	    return false;
+	}
         NetworkInfo networkInfo = exchangeService.mNetworkInfo;
 
         // Enforce manual sync only while roaming here
